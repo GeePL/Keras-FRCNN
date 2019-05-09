@@ -1,0 +1,26 @@
+<annotation>
+	<folder>xaj20181101</folder>
+	<filename>H8A1C22226.jpg</filename>
+	<path>C:\Users\GeePL\Desktop\PyProject\keras-frcnn\xaj20181101\H8A1C22226.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>3456</width>
+		<height>5775</height>
+		<depth>1</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>72B</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>646</xmin>
+			<ymin>4508</ymin>
+			<xmax>754</xmax>
+			<ymax>4600</ymax>
+		</bndbox>
+	</object>
+</annotation>

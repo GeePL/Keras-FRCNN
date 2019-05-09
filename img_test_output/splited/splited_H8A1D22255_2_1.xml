@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+	<annotation verified="no">
+		<filename>H8A1D22255_2_1</filename>
+		<size>
+			<width>900</width>
+			<height>900</height>
+			<depth>1</depth>
+		</size>
+		<object>
+			<name>71</name>
+			<pose>Unspecified</pose>
+			<truncated>0</truncated>
+			<Difficult>0</Difficult>
+			<bndbox>
+				<xmin>190</xmin>
+				<ymin>476</ymin>
+				<xmax>252</xmax>
+				<ymax>545</ymax>
+			</bndbox>
+		</object>
+	</annotation>
