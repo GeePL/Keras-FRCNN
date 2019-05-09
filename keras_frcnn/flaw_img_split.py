@@ -324,8 +324,9 @@ def split(all_resized_imgs, save, save_path, height_slices, width_slices,
                 xml_create(img_details, save_path, file_name_prefix='splited_')               
 
 if __name__=="__main__":
-    data_path = r'D:\dataset2018\65'
-    all_imgs = resize02(data_path, save=True, 
-                       save_path=r'D:\dataset2018\65\resized', 
+    for num in [69,70,74,78,79]:
+        data_path = r'/opt/xdata/chaoy/dataset2018/'+str(num)
+        all_imgs = resize02(data_path, save=True, 
+                       save_path=r'/home/guopl/resized/'+str(num), 
                        save_xml=False, visible=True, width=1800)
     
