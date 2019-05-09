@@ -146,6 +146,7 @@ output
             瑕疵坐标：左下-右上
 """
 def resize02(source_dir, save, save_path='', 
+             white_list=['61','62','63','64','71','72','73'],
            save_xml=False, visible=False, width=1800):
     all_resized_imgs = []
     classes_count = {}
@@ -157,7 +158,7 @@ def resize02(source_dir, save, save_path='',
     xml_names.sort()
     assert len(jpg_names) == len(xml_names)
     print(len(jpg_names))
-    for i in range(200):
+    for i in range(500):
         assert jpg_names[i][:-4] == xml_names[i][:-4]
         img_path = os.path.join(data_path, jpg_names[i])
         annot_path = os.path.join(data_path, xml_names[i])
@@ -182,6 +183,8 @@ def resize02(source_dir, save, save_path='',
         
         for element_obj in element_objs:
             class_name = element_obj.find('name').text[:2]
+            if class_name in white_list:
+                continue
             assert len(class_name)==2
             if class_name not in classes_count:
                 classes_count[class_name] = 1
@@ -205,6 +208,7 @@ def resize02(source_dir, save, save_path='',
                 cv2.putText(resized_img, class_name, textOrg, cv2.FONT_HERSHEY_DUPLEX, 1, (255, 0, 0), 1)
             ## 是否保存缩放后的图片
             if save:
+                
                 save_path_tmp = save_path+sep+class_name
                 if not os.path.exists(save_path_tmp):
                     os.makedirs(save_path_tmp)
@@ -213,7 +217,7 @@ def resize02(source_dir, save, save_path='',
             if save_xml:
                 xml_create(resized_img_data, save_path_tmp, file_name_prefix='resized_')              
         all_resized_imgs.append(resized_img_data)
-    return all_resized_imgs
+    return all_resized_imgs, class_mapping, classes_count
 
 """
 all_resized_imgs
@@ -327,7 +331,7 @@ def split(all_resized_imgs, save, save_path, height_slices, width_slices,
 
 if __name__=="__main__":
     data_path = r'D:\dataset2018'
-    all_imgs = resize02(data_path, save=True, 
+    all_imgs, _, _ = resize02(data_path, save=True, 
                        save_path=r'D:\dataset2018\resized', 
                        save_xml=False, visible=True, width=900)
     
