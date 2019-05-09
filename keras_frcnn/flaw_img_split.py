@@ -156,7 +156,8 @@ def resize02(source_dir, save, save_path='',
     xml_names = [x for x in os.listdir(data_path) if x[-4:]=='.xml']
     xml_names.sort()
     assert len(jpg_names) == len(xml_names)
-    for i in range(len(jpg_names)):
+    print(len(jpg_names))
+    for i in range(200):
         assert jpg_names[i][:-4] == xml_names[i][:-4]
         img_path = os.path.join(data_path, jpg_names[i])
         annot_path = os.path.join(data_path, xml_names[i])
@@ -204,12 +205,13 @@ def resize02(source_dir, save, save_path='',
                 cv2.putText(resized_img, class_name, textOrg, cv2.FONT_HERSHEY_DUPLEX, 1, (255, 0, 0), 1)
             ## 是否保存缩放后的图片
             if save:
-                if not os.path.exists(save_path):
-                    os.makedirs(save_path)
-                Image.fromarray(resized_img).save(save_path+sep+'resized_'+jpg_names[i]) 
+                save_path_tmp = save_path+sep+class_name
+                if not os.path.exists(save_path_tmp):
+                    os.makedirs(save_path_tmp)
+                Image.fromarray(resized_img).save(save_path_tmp+sep+'resized_'+jpg_names[i]) 
             ## 是否保存缩放后的xml文件
             if save_xml:
-                xml_create(resized_img_data, save_path, file_name_prefix='resized_')              
+                xml_create(resized_img_data, save_path_tmp, file_name_prefix='resized_')              
         all_resized_imgs.append(resized_img_data)
     return all_resized_imgs
 
@@ -324,8 +326,8 @@ def split(all_resized_imgs, save, save_path, height_slices, width_slices,
                 xml_create(img_details, save_path, file_name_prefix='splited_')               
 
 if __name__=="__main__":
-    data_path = r'D:\dataset2018\65'
+    data_path = r'D:\dataset2018'
     all_imgs = resize02(data_path, save=True, 
-                       save_path=r'D:\dataset2018\65\resized', 
-                       save_xml=False, visible=True, width=1800)
+                       save_path=r'D:\dataset2018\resized', 
+                       save_xml=False, visible=True, width=900)
     
