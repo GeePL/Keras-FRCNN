@@ -146,8 +146,10 @@ output
             瑕疵坐标：左下-右上
 """
 def resize02(source_dir, save, save_path='', 
+           white_list=['61','62','63','64','71','72','73'],
            save_xml=False, visible=False, width=1800):
     all_resized_imgs = []
+    count=0
     classes_count = {}
     class_mapping = {}
     data_path = os.path.join(source_dir)
@@ -155,23 +157,30 @@ def resize02(source_dir, save, save_path='',
     jpg_names.sort()
     xml_names = [x for x in os.listdir(data_path) if x[-4:]=='.xml']
     xml_names.sort()
+    print(len(jpg_names))
     assert len(jpg_names) == len(xml_names)
     for i in range(len(jpg_names)):
+        if(i<10840):
+            continue
         assert jpg_names[i][:-4] == xml_names[i][:-4]
+        print(str(i)+"  "+jpg_names[i][:-4])
         img_path = os.path.join(data_path, jpg_names[i])
         annot_path = os.path.join(data_path, xml_names[i])
         et = ET.parse(annot_path)
         element = et.getroot()
         element_objs = element.findall('object')
                 
-        element_width = int(element.find('size').find('width').text)
-        element_height = int(element.find('size').find('height').text)
+         ##读取图片，并压缩图片
+        raw_img = cv2.imread(img_path)
         
+        element_width = raw_img.shape[1];
+        element_height = raw_img.shape[0];
+#        print(element_height)
+#        print(element_width)
         ratio = float(width)/element_width
         height = int(element_height * ratio)
         
-        ##读取图片，并压缩图片
-        raw_img = cv2.imread(img_path) 
+       
         resized_img = cv2.resize(raw_img, (width, height))
         
         if len(element_objs) > 0:
@@ -182,12 +191,15 @@ def resize02(source_dir, save, save_path='',
         for element_obj in element_objs:
             class_name = element_obj.find('name').text[:2]
             assert len(class_name)==2
+            
             if class_name not in classes_count:
                 classes_count[class_name] = 1
             else:
                 classes_count[class_name] += 1
             if class_name not in class_mapping:
                 class_mapping[class_name] = len(class_mapping)
+            if class_name in white_list:
+                continue
             ## 读取标注框并压缩标注框
             obj_bbox = element_obj.find('bndbox')
             x1 = int(round(float(obj_bbox.find('xmin').text)*ratio))
@@ -204,13 +216,20 @@ def resize02(source_dir, save, save_path='',
                 cv2.putText(resized_img, class_name, textOrg, cv2.FONT_HERSHEY_DUPLEX, 1, (255, 0, 0), 1)
             ## 是否保存缩放后的图片
             if save:
-                if not os.path.exists(save_path):
-                    os.makedirs(save_path)
-                Image.fromarray(resized_img).save(save_path+sep+'resized_'+jpg_names[i]) 
+                count=count+1
+              
+                save_path_tmp = save_path+sep+class_name
+                if not os.path.exists(save_path_tmp):
+                    os.makedirs(save_path_tmp)
+                Image.fromarray(resized_img).save(save_path_tmp+sep+'resized_'+jpg_names[i]) 
+             
             ## 是否保存缩放后的xml文件
             if save_xml:
-                xml_create(resized_img_data, save_path, file_name_prefix='resized_')              
+                xml_create(resized_img_data, save_path_tmp, file_name_prefix='resized_')              
         all_resized_imgs.append(resized_img_data)
+    print(classes_count)
+    print(class_mapping)
+    print(count)
     return all_resized_imgs
 
 """
@@ -324,9 +343,9 @@ def split(all_resized_imgs, save, save_path, height_slices, width_slices,
                 xml_create(img_details, save_path, file_name_prefix='splited_')               
 
 if __name__=="__main__":
-    for num in [69,70,74,78,79]:
-        data_path = r'/opt/xdata/chaoy/dataset2018/'+str(num)
-        all_imgs = resize02(data_path, save=True, 
-                       save_path=r'/home/guopl/resized/'+str(num), 
-                       save_xml=False, visible=True, width=1800)
+    data_path = r'/opt/xdata/chaoy/dataset2018/'
+    all_resized_imgs = resize02(data_path, save=True, 
+                   save_path=r'/home/guopl/resized', 
+                   save_xml=False, visible=False, width=900)
+        
     
