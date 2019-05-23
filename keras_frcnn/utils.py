@@ -151,9 +151,14 @@ output
             瑕疵坐标：左下-右上
 """
 def resize02(source_dir, save, save_path='', 
+<<<<<<< HEAD:keras_frcnn/utils.py
              white_list=['61','62','63','64','71','72','73'],
+=======
+           white_list=['61','62','63','64','71','72','73'],
+>>>>>>> 8c8f50e3f0157b68f9105770f94b75ff7a65f348:keras_frcnn/flaw_img_split.py
            save_xml=False, visible=False, width=1800):
     all_resized_imgs = []
+    count=0
     classes_count = {}
     class_mapping = {}
     data_path = os.path.join(source_dir)
@@ -161,17 +166,26 @@ def resize02(source_dir, save, save_path='',
     jpg_names.sort()
     xml_names = [x for x in os.listdir(data_path) if x[-4:]=='.xml']
     xml_names.sort()
+    print(len(jpg_names))
     assert len(jpg_names) == len(xml_names)
     print(len(jpg_names))
     for i in range(len(jpg_names)):
+        if(i<10840):
+            continue
         assert jpg_names[i][:-4] == xml_names[i][:-4]
+        print(str(i)+"  "+jpg_names[i][:-4])
         img_path = os.path.join(data_path, jpg_names[i])
         annot_path = os.path.join(data_path, xml_names[i])
         et = ET.parse(annot_path)
         element = et.getroot()
         element_objs = element.findall('object')
+<<<<<<< HEAD:keras_frcnn/utils.py
          
         ##读取图片，并压缩图片
+=======
+                
+         ##读取图片，并压缩图片
+>>>>>>> 8c8f50e3f0157b68f9105770f94b75ff7a65f348:keras_frcnn/flaw_img_split.py
         raw_img = cv2.imread(img_path)
         
         element_width = raw_img.shape[1];
@@ -195,12 +209,15 @@ def resize02(source_dir, save, save_path='',
             if class_name in white_list:
                 continue
             assert len(class_name)==2
+            
             if class_name not in classes_count:
                 classes_count[class_name] = 1
             else:
                 classes_count[class_name] += 1
             if class_name not in class_mapping:
                 class_mapping[class_name] = len(class_mapping)
+            if class_name in white_list:
+                continue
             ## 读取标注框并压缩标注框
             obj_bbox = element_obj.find('bndbox')
             x1 = int(round(float(obj_bbox.find('xmin').text)*ratio))
@@ -217,15 +234,31 @@ def resize02(source_dir, save, save_path='',
                 cv2.putText(resized_img, class_name, textOrg, cv2.FONT_HERSHEY_DUPLEX, 1, (255, 0, 0), 1)
             ## 是否保存缩放后的图片
             if save:
+<<<<<<< HEAD:keras_frcnn/utils.py
+=======
+                count=count+1
+              
+>>>>>>> 8c8f50e3f0157b68f9105770f94b75ff7a65f348:keras_frcnn/flaw_img_split.py
                 save_path_tmp = save_path+sep+class_name
                 if not os.path.exists(save_path_tmp):
                     os.makedirs(save_path_tmp)
                 Image.fromarray(resized_img).save(save_path_tmp+sep+'resized_'+jpg_names[i]) 
+<<<<<<< HEAD:keras_frcnn/utils.py
+=======
+             
+>>>>>>> 8c8f50e3f0157b68f9105770f94b75ff7a65f348:keras_frcnn/flaw_img_split.py
             ## 是否保存缩放后的xml文件
             if save_xml:
                 xml_create(resized_img_data, save_path_tmp, file_name_prefix='resized_')              
         all_resized_imgs.append(resized_img_data)
+<<<<<<< HEAD:keras_frcnn/utils.py
     return all_resized_imgs, class_mapping, classes_count
+=======
+    print(classes_count)
+    print(class_mapping)
+    print(count)
+    return all_resized_imgs
+>>>>>>> 8c8f50e3f0157b68f9105770f94b75ff7a65f348:keras_frcnn/flaw_img_split.py
 
 """
 all_resized_imgs
@@ -494,6 +527,7 @@ def bboxes_details(data_dir, target_classes, min_length=900):
             
         
 if __name__=="__main__":
+<<<<<<< HEAD:keras_frcnn/utils.py
     data_path = r'D:\dataset2018-05-23\raw_img_with_histogram'
     target_classes=['65','66','67','70', '75','77','79','80']
 #    classify(data_path=data_path, 
@@ -518,3 +552,11 @@ if __name__=="__main__":
     
     
     
+=======
+    data_path = r'/opt/xdata/chaoy/dataset2018/'
+    all_resized_imgs = resize02(data_path, save=True, 
+                   save_path=r'/home/guopl/resized', 
+                   save_xml=False, visible=False, width=900)
+        
+    
+>>>>>>> 8c8f50e3f0157b68f9105770f94b75ff7a65f348:keras_frcnn/flaw_img_split.py
