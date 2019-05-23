@@ -4,11 +4,14 @@ import os
 import xml.etree.ElementTree as ET
 import numpy as np
 from PIL import Image
+import matplotlib.pyplot as plt
 from xml_create import xml_create
 import random
-
+import shutil
+import config
+from data_augment import augment
 sep = os.sep
-
+C = config.Config()
 #左下-右上
 def intersection(ai, bi):
 	x = max(ai[0], bi[0])
@@ -58,7 +61,7 @@ output
             瑕疵坐标：左下-右上
 """
 def resize01(source_dir, target_classes, save, save_path='', 
-           save_xml=False, visible=False, width=1800):
+           save_xml=False, visible=False, width=900):
     all_resized_imgs = []
     classes_names =[x for x in os.listdir(source_dir) if x in target_classes]
     for class_name in classes_names:
@@ -68,6 +71,7 @@ def resize01(source_dir, target_classes, save, save_path='',
         xml_names = [x for x in os.listdir(data_path) if x[-4:]=='.xml']
         xml_names.sort()
         assert len(jpg_names) == len(xml_names)
+        print(len(jpg_names))
         for i in range(len(jpg_names)):
             assert jpg_names[i][:-4] == xml_names[i][:-4]
             img_path = os.path.join(data_path, jpg_names[i])
@@ -75,15 +79,16 @@ def resize01(source_dir, target_classes, save, save_path='',
             et = ET.parse(annot_path)
             element = et.getroot()
             element_objs = element.findall('object')
-                    
-            element_width = int(element.find('size').find('width').text)
-            element_height = int(element.find('size').find('height').text)
             
-            ratio = float(width)/element_width
-            height = element_height * ratio
+            raw_img = cv2.imread(img_path)         
+            element_width = raw_img.shape[1];
+            element_height = raw_img.shape[0];
+            
+            width_ratio = float(width)/element_width
+            height_ratio = width_ratio / 1.5
+            height =int(element_height * height_ratio)
             
             ##读取图片，并压缩图片
-            raw_img = cv2.imread(img_path) 
             resized_img = cv2.resize(raw_img, (width, height))
             
             if len(element_objs) > 0:
@@ -91,34 +96,34 @@ def resize01(source_dir, target_classes, save, save_path='',
                                    'height':height,'bboxes':[],
                                    'filepath':img_path, 'filename':jpg_names[i][:-4]}
             
-            for element_obj in element_objs:
-                name = element_obj.find('name').text[:2]
-                ## 读取标注框并压缩标注框
-                obj_bbox = element_obj.find('bndbox')
-                x1 = int(round(float(obj_bbox.find('xmin').text)*ratio))
-                y1 = int(round(float(obj_bbox.find('ymin').text)*ratio))
-                x2 = int(round(float(obj_bbox.find('xmax').text)*ratio))
-                y2 = int(round(float(obj_bbox.find('ymax').text)*ratio))
-                resized_img_data['bboxes'].append(
-                        {'class':name,'x1':x1,'x2':x2,'y1':y1,'y2':y2})
-                
-                ## 是否在缩放后的图片中标出标注框
-                if visible: 
-                    cv2.rectangle(resized_img, (x1, y1),(x2, y2),(0,255,255),2) 
-                    textOrg = (x1, y1)
-                    cv2.putText(resized_img, name, textOrg, cv2.FONT_HERSHEY_DUPLEX, 1, (0, 0, 0), 1)
-                ## 是否保存缩放后的图片
-                if save:
-                    Image.fromarray(resized_img).save(save_path+sep+'resized_'+jpg_names[i]) 
-                ## 是否保存缩放后的xml文件
-                if save_xml:
-                    xml_create(resized_img_data, save_path, file_name_prefix='resized_')
-#                old_x1 = int(round(float(obj_bbox.find('xmin').text)))
-#                old_y1 = int(round(float(obj_bbox.find('ymin').text)))
-#                old_x2 = int(round(float(obj_bbox.find('xmax').text)))
-#                old_y2 = int(round(float(obj_bbox.find('ymax').text)))
-#                cv2.rectangle(raw_img, (old_x1, old_y1),(old_x2, old_y2),(0,255,255),2)          
-#                Image.fromarray(raw_img).save(fpath_tmp+'/'+imgs_path[i][:-4]+'.jpg')               
+                for element_obj in element_objs:
+                    name = element_obj.find('name').text[:2]
+                    ## 读取标注框并压缩标注框
+                    obj_bbox = element_obj.find('bndbox')
+                    x1 = int(round(float(obj_bbox.find('xmin').text)*width_ratio))
+                    y1 = int(round(float(obj_bbox.find('ymin').text)*height_ratio))
+                    x2 = int(round(float(obj_bbox.find('xmax').text)*width_ratio))
+                    y2 = int(round(float(obj_bbox.find('ymax').text)*height_ratio))
+                    resized_img_data['bboxes'].append(
+                            {'class':name,'x1':x1,'x2':x2,'y1':y1,'y2':y2})
+                    
+                    ## 是否在缩放后的图片中标出标注框
+                    if visible: 
+                        cv2.rectangle(resized_img, (x1, y1),(x2, y2),(0,255,255),2) 
+                        textOrg = (x1, y1)
+                        cv2.putText(resized_img, name, 
+                                    textOrg, cv2.FONT_HERSHEY_DUPLEX, 1, (0, 0, 0), 1)
+                    ## 是否保存缩放后的图片
+                    if save:
+                        save_path_tmp = save_path+sep+class_name
+                        if not os.path.exists(save_path_tmp):
+                            os.makedirs(save_path_tmp)
+                        Image.fromarray(resized_img) \
+                        .save(save_path_tmp+sep+'resized_'+jpg_names[i]) 
+                    ## 是否保存缩放后的xml文件
+                    if save_xml:
+                        xml_create(resized_img_data, save_path_tmp, 
+                                   file_name_prefix='resized_')
             all_resized_imgs.append(resized_img_data)
     return all_resized_imgs
 
@@ -158,24 +163,28 @@ def resize02(source_dir, save, save_path='',
     xml_names.sort()
     assert len(jpg_names) == len(xml_names)
     print(len(jpg_names))
-    for i in range(500):
+    for i in range(len(jpg_names)):
         assert jpg_names[i][:-4] == xml_names[i][:-4]
         img_path = os.path.join(data_path, jpg_names[i])
         annot_path = os.path.join(data_path, xml_names[i])
         et = ET.parse(annot_path)
         element = et.getroot()
         element_objs = element.findall('object')
-                
-        element_width = int(element.find('size').find('width').text)
-        element_height = int(element.find('size').find('height').text)
+         
+        ##读取图片，并压缩图片
+        raw_img = cv2.imread(img_path)
         
+        element_width = raw_img.shape[1];
+        element_height = raw_img.shape[0];
+#        print(element_height)
+#        print(element_width)
         ratio = float(width)/element_width
         height = int(element_height * ratio)
         
-        ##读取图片，并压缩图片
-        raw_img = cv2.imread(img_path) 
+       
         resized_img = cv2.resize(raw_img, (width, height))
-        
+#        print(resized_img.shape[0])
+#        print(resized_img.shape[1])
         if len(element_objs) > 0:
             resized_img_data = {'resized_img':resized_img,'width':width,
                                'height':height,'bboxes':[],
@@ -208,7 +217,6 @@ def resize02(source_dir, save, save_path='',
                 cv2.putText(resized_img, class_name, textOrg, cv2.FONT_HERSHEY_DUPLEX, 1, (255, 0, 0), 1)
             ## 是否保存缩放后的图片
             if save:
-                
                 save_path_tmp = save_path+sep+class_name
                 if not os.path.exists(save_path_tmp):
                     os.makedirs(save_path_tmp)
@@ -329,9 +337,184 @@ def split(all_resized_imgs, save, save_path, height_slices, width_slices,
             if save_xml:
                 xml_create(img_details, save_path, file_name_prefix='splited_')               
 
+
+def classify(data_path, target_dir,
+             target_list = ['65','66','67','70', '75','77','79','80']):
+    classes_count = {}
+    for name in target_list:
+        path = os.path.join(data_path, name)
+        jpg_names = [x for x in os.listdir(path) if x[-4:]=='.jpg']
+        jpg_names.sort()
+        xml_names = [x for x in os.listdir(path) if x[-4:]=='.xml']
+        xml_names.sort()
+        assert len(jpg_names) == len(xml_names)
+        print(len(jpg_names))
+        for i in range(len(jpg_names)):
+            assert jpg_names[i][:-4] == xml_names[i][:-4]
+            img_path = os.path.join(path, jpg_names[i])
+            annot_path = os.path.join(path, xml_names[i])
+            et = ET.parse(annot_path)
+            element = et.getroot()
+            element_objs = element.findall('object')
+            classes_name = set()
+            if len(element_objs) > 0:
+                #print(len(element_objs))
+                for element_obj in element_objs:
+                    class_name = element_obj.find('name').text[:2]
+                    #print(type(class_name))
+                    assert(len(class_name)==2)
+                    classes_name.add(class_name)
+            if len(classes_name) > 0:    
+                #print(len(classes_name))
+                for class_name in classes_name:
+                    if class_name not in target_list:
+                        continue
+                    if class_name not in classes_count:
+                        classes_count[class_name] = 1
+                    else:
+                        classes_count[class_name] += 1
+                    target_path = os.path.join(target_dir + sep + class_name)
+                    #print(target_path)
+                    if not os.path.exists(target_path):
+                        os.makedirs(target_path)
+                    shutil.copy(img_path, target_path)
+                    shutil.copy(annot_path, target_path)
+    return classes_count
+
+def img_detail_count(data_path, target_classes):
+    heights = {'greater':0,'less':0,'equal':0}
+    gt_100 = 0;
+    width = 0
+    total = 0;
+    for class_name in target_classes:
+        path = os.path.join(data_path, class_name)
+        jpg_names = [x for x in os.listdir(path) if x[-4:]=='.jpg']
+        print(len(jpg_names))
+        for jpg_name in jpg_names:
+            img_path = os.path.join(path, jpg_name)
+            #print(img_path)
+            img = cv2.imread(img_path)
+            #type(img)
+            width = img.shape[1]
+            height = img.shape[0]
+            total += 1
+            if height>width:
+                if height-width > 200:
+                    gt_100+=1
+                heights['greater'] += 1
+            elif height==width:
+                heights['equal'] += 1
+            else:
+                heights['less'] += 1
+    return heights, gt_100
+
+def bboxes_details(data_dir, target_classes, min_length=900):
+    hw_ratio = {}
+    wh_ratio = {}
+    heights = {}
+    widths = {}
+    areas = {}
+    bboxes_count = 0
+    bboxes_of_class_count = {}
+    for class_name in target_classes:
+            bboxes_of_class_count[class_name] = 0
+    for class_name in target_classes:
+        data_path = os.path.join(data_dir, class_name)
+        xml_names = [x for x in os.listdir(data_path) if x[-4:]=='.xml']
+        print(len(xml_names))
+        for xml_name in xml_names:
+            annot_path = os.path.join(data_path, xml_name)
+            et = ET.parse(annot_path)
+            element = et.getroot()
+            element_objs = element.findall('object')
+            if len(element_objs)>0:
+                for element_obj in element_objs:
+                    class_name = element_obj.find('name').text[:2]
+                    if class_name in target_classes:        
+                        obj_bbox = element_obj.find('bndbox')
+                        bboxes_count += 1
+                        bboxes_of_class_count[class_name] += 1
+                        x1 = int(round(float(obj_bbox.find('xmin').text)))
+                        y1 = int(round(float(obj_bbox.find('ymin').text)))
+                        x2 = int(round(float(obj_bbox.find('xmax').text)))
+                        y2 = int(round(float(obj_bbox.find('ymax').text)))
+                        
+                        width = x2 - x1
+                        w = int(width / 10)
+                        if w not in widths:
+                            widths[w] = 1;
+                        else:
+                            widths[w] += 1
+                            
+                        height = y2 - y1
+                        h = int(height / 10)
+                        if h not in heights:
+                            heights[h] = 1
+                        else:
+                            heights[h] += 1
+                            
+                        ratio = int(height / (width+0.00001))
+                        if ratio not in hw_ratio:
+                            hw_ratio[ratio] = 1
+                        else:
+                            hw_ratio[ratio] += 1
+                        
+                        r = int(width/(height+0.00001))
+                        if r not in wh_ratio:
+                            wh_ratio[r] = 1
+                        else:
+                            wh_ratio[r] += 1
+                            
+                        area = width * height
+                        a = int(area / 1000)
+                        if a not in areas:
+                            areas[a] = 1
+                        else:
+                            areas[a] += 1
+    plt.figure(1) 
+    height_x_label = heights.keys()
+    height_y_label = heights.values()
+    plt.plot(height_x_label, height_y_label)
+    plt.xlabel("(*10)")
+    plt.ylabel("count of each height")
+    plt.title("the count of each heigth, total="+str(bboxes_count))
+    plt.savefig("1200_full_height.jpg")
+    
+    plt.figure(2)
+    width_x_label = widths.keys()
+    width_y_label = widths.values()
+    plt.plot(width_x_label, width_y_label)
+    plt.xlabel("(*10)")
+    plt.ylabel("count of each width")
+    plt.title("the count of each width, total="+str(bboxes_count))
+    plt.savefig("1200_width.jpg")
+    return hw_ratio, wh_ratio, heights, widths,\
+         areas, bboxes_count, bboxes_of_class_count
+                        
+            
+        
 if __name__=="__main__":
-    data_path = r'D:\dataset2018'
-    all_imgs, _, _ = resize02(data_path, save=True, 
-                       save_path=r'D:\dataset2018\resized', 
-                       save_xml=False, visible=True, width=900)
+    data_path = r'D:\dataset2018-05-23\raw_img_with_histogram'
+    target_classes=['65','66','67','70', '75','77','79','80']
+#    classify(data_path=data_path, 
+#             target_dir=r'D:\dataset2018\raw_img_with_histogram_II')
+    
+
+    all_imgs = resize01(source_dir=r'D:\dataset2018-05-23\raw_img_with_histogram',
+                        target_classes=target_classes, save=True, 
+                        save_path=r'D:\dataset2018-05-23\resized_img_with_histogram\900_67_height', 
+                        save_xml=True, visible=False, width=1200)
+    all_imgs = augment(all_imgs, C)
+    
+#    heights, gt_100 = img_detail_count(
+#            data_path=r'D:\dataset2018\resized_img_with_histogram\1200_67_height', 
+#            target_classes=target_classes)
+#    all_imgs, _, _ = resize02(data_path, save=True, 
+#                       save_path=r'D:\dataset2018\resized', 
+#                       save_xml=False, visible=True, width=900)
+#    classes_count = classify(data_path, r'D:\dataset2018\raw_img_with_xml')
+#    hw_ratio, wh_ratio, heights, widths, areas, bboxes_count, bboxes_of_class_count =\
+#        bboxes_details(data_dir=data_path, target_classes=target_classes)
+    
+    
     

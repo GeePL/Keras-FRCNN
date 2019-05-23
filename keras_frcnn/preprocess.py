@@ -48,10 +48,8 @@ def his_gram(img_path):
     cdf_m = np.ma.masked_equal(cdf,0) #除去直方图中的0值
     cdf_m = (cdf_m - cdf_m.min())*255/(cdf_m.max()-cdf_m.min())#等同于前面介绍的lut[i] = int(255.0 *p[i])公式
     cdf = np.ma.filled(cdf_m,0).astype('uint8') #将掩模处理掉的元素补为0
-
     result = cv2.LUT(image, cdf)
-    
-    cv2.imwrite("opencv_lut.jpg", result)
+    cv2.imwrite("his_gram.jpg", result)
     
 def gamma(img_path):
     img = cv2.imread(img_path,0)
@@ -67,6 +65,6 @@ if __name__=='__main__':
 #    filters = build_filters()
 #    img = cv2.imread('./opencv_lut.jpg')
 #    res = getGabor(img,filters)
-    his_gram('./81_20171228_193903_11482.png')
+    print("test")
+    his_gram('../img_test/H8A1A22086.jpg')
 #    gamma('./opencv_lut.jpg')
-    canny_transfer('./opencv_lut.jpg')

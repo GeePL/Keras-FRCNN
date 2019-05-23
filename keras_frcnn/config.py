@@ -10,8 +10,8 @@ class Config:
 		self.network = 'resnet50'
 
 		# setting for data augmentation
-		self.use_horizontal_flips = False
-		self.use_vertical_flips = False
+		self.use_horizontal_flips = True
+		self.use_vertical_flips = True
 		self.rot_90 = False
 
 		# anchor box scales

@@ -317,7 +317,7 @@ def get_anchor_gt(all_img_data, class_count, C, img_length_calc_function, backen
 				# read in image, and optionally add augmentation
 
 				if mode == 'train':
-					img_data_aug, x_img = data_augment.augment(img_data, C, augment=True)
+					img_data_aug, x_img = data_augment.augment(img_data, C, augment=False)
 				else:
 					img_data_aug, x_img = data_augment.augment(img_data, C, augment=False)
 
