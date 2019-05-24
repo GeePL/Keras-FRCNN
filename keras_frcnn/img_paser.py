@@ -9,8 +9,7 @@ import os
 import xml.etree.ElementTree as ET
 import numpy as np
 from PIL import Image
-from xml_create import xml_create
-from data_augment import augment
+from keras_frcnn import xml_create
 import random
 sep = os.sep
 
@@ -124,7 +123,7 @@ def resize(source_dir, target_classes, save, save_path='',
                         .save(save_path_tmp+sep+'resized_'+jpg_names[i]) 
                     ## 是否保存缩放后的xml文件
                     if save_xml:
-                        xml_create(resized_img_data, save_path_tmp, 
+                        xml_create.xml_create(resized_img_data, save_path_tmp, 
                                    file_name_prefix='resized_')
             all_resized_imgs.append(resized_img_data)
     print("resized done")
@@ -242,19 +241,27 @@ def split(all_resized_imgs, target_class,save, save_path,
                     class_name = bbox['class']
                     if class_name not in target_class:
                         continue
-                    save_path_tmp = save_path+sep+class_name
+                    if np.random.randint(0,10) < 8:
+                        save_path_tmp = save_path+sep+'trainval'+sep+class_name
+                    else:
+                        save_path_tmp = save_path+sep+'test'+sep+class_name
                     if not os.path.exists(save_path_tmp):
                         os.makedirs(save_path_tmp)
                     Image.fromarray(splited_img_data).save(save_path_tmp+sep+'splited_'+filename+'.jpg') 
                     ## 是否保存裁剪后的xml文件
                     if save_xml:
-                        xml_create(img_details, save_path_tmp, file_name_prefix='splited_')   
+                        xml_create.xml_create(img_details, save_path_tmp, file_name_prefix='splited_')   
         all_splited_imgs.append(splited_imgs_per_resized_img)
     print("split done")
     return all_splited_imgs
 
-def get_flaw_data(source_dir, target_class, width=900):
+def get_flaw_data(source_dir, 
+                  target_class=['65','66','67','70','75','77','79','80'],
+                  data_type='trainval',
+                  width=900):
     all_flaw_imgs = []
+    classes_count = {}
+    class_mapping = {}
     for class_name in target_class:
         data_path = os.path.join(source_dir, class_name)
         jpg_names = [x for x in os.listdir(data_path) if x[-4:]=='.jpg']
@@ -272,7 +279,7 @@ def get_flaw_data(source_dir, target_class, width=900):
             annotation_data = {'filepath': img_path, 
                                'width':width ,'height': width, 'bboxes': []}
             
-            if np.random.randint(0,10) < 7:
+            if data_type=='trainval':
                 annotation_data['imageset'] = 'trainval'
             else:
                 annotation_data['imageset'] = 'test'
@@ -280,6 +287,14 @@ def get_flaw_data(source_dir, target_class, width=900):
             if len(element_objs) > 0:
                 for element_obj in element_objs:
                     name = element_obj.find('name').text[:2]
+                    if name not in target_class:
+                        continue
+                    if name not in classes_count:
+                        classes_count[name] = 1
+                    else:
+                        classes_count[name] += 1
+                    if name not in class_mapping:
+                        class_mapping[name] = len(class_mapping)
                     obj_bbox = element_obj.find('bndbox')
                     x1 = int(round(float(obj_bbox.find('xmin').text)))
                     y1 = int(round(float(obj_bbox.find('ymin').text)))
@@ -289,14 +304,14 @@ def get_flaw_data(source_dir, target_class, width=900):
                             'class': name, 'x1': x1, 'x2': x2, 
                             'y1': y1, 'y2': y2, 'difficult': 1})
             all_flaw_imgs.append(annotation_data)
-    return all_flaw_imgs
+    return all_flaw_imgs, classes_count, class_mapping
 
 def get_normal_data():
     pass
 
   
 if __name__=='__main__':
-    #target_classes=['65','66','67','70', '75','77','79','80']
+#    target_classes=['65','66','67','70', '75','77','79','80']
 #    all_resized_imgs = resize(source_dir=r'D:\dataset2018-05-23\raw_img_with_histogram',
 #                        target_classes=['65','66','67','70','75','77','79','80'], save=False, 
 #                        save_path=r'D:\dataset2018-05-23\resized_img_with_histogram', 
@@ -308,7 +323,8 @@ if __name__=='__main__':
 #                             height_slices=6, width_slices=1,
 #                             max_pieces=3, offset=5, height=900, width=900,
 #                             visible=False, save_xml=True)
-    all_flaw_imgs = get_flaw_data(source_dir=r'D:\dataset2018-05-23\splited_img_with_histogram',
+    all_flaw_imgs, classes_count, class_mapping= get_flaw_data(source_dir=r'D:\dataset2018-05-23\splited_img_with_histogram\trainval',
+                                                               data_type='trainval',
                                   target_class=['65','66','67','70','75','77','79','80'])
     count=0
     print('*******')
@@ -316,4 +332,4 @@ if __name__=='__main__':
         if flaw_img['imageset']=='trainval':
             count+=1
     print(count)
-    
+#    
