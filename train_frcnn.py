@@ -14,18 +14,16 @@ from keras.layers import Input
 from keras.models import Model
 from keras_frcnn import config, data_generators
 from keras_frcnn import losses as losses
+from keras_frcnn.img_paser import get_flaw_data, get_normal_data
 import keras_frcnn.roi_helpers as roi_helpers
 from keras.utils import generic_utils
-
 from keras.utils.vis_utils import plot_model 
-
-
 
 sys.setrecursionlimit(40000)
 
 parser = OptionParser()
 
-parser.add_option("-p", "--path", dest="train_path", help="Path to training data.",default=r"C:\Users\GeePL\Desktop\VOCtrainval_06-Nov-2007\VOCdevkit")
+parser.add_option("-p", "--path", dest="train_path", help="Path to training data.",default=r'D:\dataset2018-05-23\splited_img_with_histogram')
 parser.add_option("-o", "--parser", dest="parser", help="Parser to use. One of simple or pascal_voc",
 				default="pascal_voc")
 parser.add_option("-n", "--num_rois", type="int", dest="num_rois", help="Number of RoIs to process at once.", default=32)
@@ -47,12 +45,13 @@ parser.add_option("--input_weight_path", dest="input_weight_path", help="Input p
 if not options.train_path:   # if filename is not given
 	parser.error('Error: path to training data must be specified. Pass --path to command line')
 
-if options.parser == 'pascal_voc':
-	from keras_frcnn.pascal_voc_parser import get_data
-elif options.parser == 'simple':
-	from keras_frcnn.simple_parser import get_data
-else:
-	raise ValueError("Command line option parser must be one of 'pascal_voc' or 'simple'")
+#if options.parser == 'pascal_voc':
+#	from keras_frcnn.pascal_voc_parser import get_data
+#elif options.parser == 'simple':
+#	from keras_frcnn.simple_parser import get_data
+#else:
+#	raise ValueError("Command line option parser must be one of 'pascal_voc' or 'simple'")
+
 
 # pass the settings from the command line, and persist them in the config object
 C = config.Config()
@@ -82,8 +81,7 @@ else:
 	# set the path to weights based on backend and model
 	C.base_net_weights = nn.get_weight_path()
 
-all_imgs, classes_count, class_mapping = get_data(options.train_path)
-
+all_imgs, classes_count, class_mapping = get_flaw_data(options.train_path,data_type='trainval')
 
 if 'bg' not in classes_count:
 	classes_count['bg'] = 0
